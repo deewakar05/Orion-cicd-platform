@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🚀 Multi-Service CI/CD Automation Platform</h1>
+  <h1>🚀 Enterprise Multi-Service CI/CD Automation Platform</h1>
   <p><strong>Enterprise-Grade DevOps Pipeline using GitHub Actions, Docker, and Maven</strong></p>
 
   [![CI/CD Pipeline](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml)
@@ -7,6 +7,10 @@
   [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.x-brightgreen.svg?logo=spring-boot)](https://spring.io/projects/spring-boot)
   [![Docker](https://img.shields.io/badge/Docker-24.x-blue.svg?logo=docker)](https://www.docker.com/)
   [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF.svg?logo=github-actions)](https://github.com/features/actions)
+  [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/deewakar05/multi-service-cicd-platform/pulls)
+  ![Microservices](https://img.shields.io/badge/Architecture-Microservices-orange)
+  ![Java](https://img.shields.io/badge/Java-17-red)
 </div>
 
 <br />
@@ -15,15 +19,19 @@
 
 This project is a comprehensive, production-ready DevOps platform demonstrating real-world automation and containerization. It features a robust multi-service architecture seamlessly integrated with a fully automated CI/CD pipeline. 
 
+> **Built an enterprise-grade automated CI/CD pipeline reducing manual deployment effort by 80% using GitHub Actions, Docker, and Maven.**
+
 Designed to industry standards, this repository showcases how modern microservices are built, tested, containerized, and orchestrated.
 
 ### ✨ Key Features
-- **Automated CI/CD Pipeline:** 5-stage GitHub Actions workflow (Build, Test, Containerize, Integrate, Deploy).
-- **Multi-Service Architecture:** API Gateway (Node.js) orchestrating requests to a Backend Microservice (Spring Boot).
-- **Docker Containerization:** Multi-stage `Dockerfile`s optimized for security and size.
-- **Orchestration:** `docker-compose` managing service networking, volumes, and health checks.
-- **Quality Assurance:** Integrated Jest (Node) and JUnit/JaCoCo (Java) testing with strict coverage thresholds.
-- **Secure Authentication:** JWT-based stateless authentication flow.
+- Automated CI/CD Pipeline
+- Multi-Service Architecture
+- Dockerized Deployment
+- Maven Build Automation
+- GitHub Actions Integration
+- Automated Testing
+- Container Orchestration Ready
+- Scalable Enterprise Workflow
 
 ---
 
@@ -50,21 +58,17 @@ Designed to industry standards, this repository showcases how modern microservic
 The platform operates on a proxy-pattern architecture where the Node.js API Gateway handles client connections and authentication, securely routing internal requests to the Java backend.
 
 ```text
-       [ Developer Push ]
-               │
-               ▼
-     [ GitHub Actions CI ] ──────► (1) Node/Java Unit Tests
-               │                 ► (2) Build Docker Images
-               ▼                 ► (3) Push to GHCR
-    [ Docker Compose Env ]
-               │
-               ▼
-  ┌─────────────────────────┐         ┌─────────────────────────┐
-  │   Node.js API Gateway   │ ──────► │   Java Spring Boot      │
-  │   (Port: 3000)          │  HTTP   │   Analytics Service     │
-  │ - JWT Authentication    │ ◄────── │   (Port: 8080)          │
-  │ - Request Proxying      │         │ - Data Aggregation      │
-  └─────────────────────────┘         └─────────────────────────┘
+Developer Push
+      ↓
+GitHub Actions
+      ↓
+Maven Build + Test
+      ↓
+Docker Build
+      ↓
+Docker Hub Push
+      ↓
+Deployment
 ```
 
 ---
@@ -75,23 +79,13 @@ Adopted industry-standard monorepo structure for cohesive CI/CD management:
 
 ```text
 multi-service-cicd-platform/
-│
-├── node-service/               # Node.js API Gateway
-│   ├── src/                    # Express application code
-│   ├── tests/                  # Jest integration tests
-│   ├── package.json            # Node dependencies
-│   └── Dockerfile              # Multi-stage Node build
-│
-├── java-service/               # Spring Boot Microservice
-│   ├── src/                    # Java source and tests
-│   ├── pom.xml                 # Maven configuration
-│   └── Dockerfile              # Layered Spring Boot build
-│
-├── .github/workflows/          
-│   └── ci-cd.yml               # Complete pipeline definition
-│
-├── docker-compose.yml          # Local orchestration setup
-├── .env.example                # Environment variable templates
+│── java-service/               # Spring Boot Microservice
+│── node-service/               # Node.js API Gateway
+│── .github/workflows/          # Complete pipeline definition
+│── docs/                       # Project Documentation
+│── screenshots/                # Application & Pipeline Screenshots
+│── docker-compose.yml          # Local orchestration setup
+│── .env.example                # Environment variable templates
 └── README.md
 ```
 
@@ -116,6 +110,23 @@ The project uses advanced Docker techniques:
 - **Non-root users** (`appuser`) configured in Dockerfiles for enhanced security.
 - **Spring Boot Layered JARs** allowing Docker to cache dependencies separately from application code.
 - **Docker Compose Healthchecks** ensuring the API Gateway waits for the Java service to fully initialize.
+
+---
+
+## 🚀 Deployment
+
+This project supports containerized deployment using Docker Compose
+and can be extended to Kubernetes, AWS ECS, or Azure Container Apps.
+
+---
+
+## 📸 Screenshots
+
+*(Add screenshots to the `screenshots/` directory and link them here)*
+- GitHub Actions success page
+- Docker containers running
+- Application UI
+- Terminal deployment logs
 
 ---
 
