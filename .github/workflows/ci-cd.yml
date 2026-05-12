@@ -14,9 +14,15 @@ name: CI/CD Pipeline — Multi-Service Platform
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - dev
+      - node-service
+      - java-service
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - dev
 
 env:
   JAVA_VERSION: "17"
