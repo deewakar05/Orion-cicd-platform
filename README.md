@@ -1,341 +1,244 @@
-# Multi-Service CI/CD Automation Platform
+<div align="center">
+  <h1>🚀 Multi-Service CI/CD Automation Platform</h1>
+  <p><strong>Enterprise-Grade DevOps Pipeline using GitHub Actions, Docker, and Maven</strong></p>
 
-> **Using GitHub Actions · Docker · Maven · Node.js · Spring Boot**
+  [![CI/CD Pipeline](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml)
+  [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg?logo=node.js)](https://nodejs.org/)
+  [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.x-brightgreen.svg?logo=spring-boot)](https://spring.io/projects/spring-boot)
+  [![Docker](https://img.shields.io/badge/Docker-24.x-blue.svg?logo=docker)](https://www.docker.com/)
+  [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF.svg?logo=github-actions)](https://github.com/features/actions)
+</div>
 
-A production-style, multi-service DevOps platform demonstrating a complete real-world CI/CD workflow. Two containerized microservices communicate over a private Docker network, tested end-to-end by a five-stage GitHub Actions pipeline.
+<br />
 
----
+## 📖 Project Overview
 
-## 📐 Architecture
+This project is a comprehensive, production-ready DevOps platform demonstrating real-world automation and containerization. It features a robust multi-service architecture seamlessly integrated with a fully automated CI/CD pipeline. 
 
-```
-                         ┌──────────────────────────────┐
-    Client               │   Docker Compose Network      │
-    (curl / Postman)     │                              │
-         │               │  ┌────────────────────────┐  │
-         │   :3000        │  │   Node.js API Gateway  │  │
-         └──────────────►│  │   (Express.js)         │  │
-                         │  │   POST /api/auth/login  │  │
-                         │  │   POST /api/auth/signup │  │
-                         │  │   GET  /api/dashboard   │  │
-                         │  │   GET  /api/analytics   │  │
-                         │  └───────────┬────────────┘  │
-                         │              │ HTTP proxy     │
-                         │  ┌───────────▼────────────┐  │
-                         │  │  Java Spring Boot       │  │
-                         │  │  Analytics Service      │  │
-                         │  │  GET  /reports          │  │
-                         │  │  GET  /logs             │  │
-                         │  │  GET  /metrics          │  │
-                         │  └────────────────────────┘  │
-                         └──────────────────────────────┘
-```
+Designed to industry standards, this repository showcases how modern microservices are built, tested, containerized, and orchestrated.
+
+### ✨ Key Features
+- **Automated CI/CD Pipeline:** 5-stage GitHub Actions workflow (Build, Test, Containerize, Integrate, Deploy).
+- **Multi-Service Architecture:** API Gateway (Node.js) orchestrating requests to a Backend Microservice (Spring Boot).
+- **Docker Containerization:** Multi-stage `Dockerfile`s optimized for security and size.
+- **Orchestration:** `docker-compose` managing service networking, volumes, and health checks.
+- **Quality Assurance:** Integrated Jest (Node) and JUnit/JaCoCo (Java) testing with strict coverage thresholds.
+- **Secure Authentication:** JWT-based stateless authentication flow.
 
 ---
 
-## 🗂️ Project Structure
+## 🛠️ Tech Stack
 
+### Frontend / API Gateway
+* **Node.js & Express.js** - High-performance non-blocking API routing.
+* **Jest & Supertest** - Comprehensive integration testing.
+
+### Backend Microservice
+* **Java 17 & Spring Boot 3.2** - Enterprise-grade backend processing.
+* **Maven** - Dependency and lifecycle management.
+* **Lombok** - Boilerplate reduction.
+
+### DevOps & Infrastructure
+* **Docker & Docker Compose** - Containerization and local orchestration.
+* **GitHub Actions** - Continuous Integration and Continuous Deployment.
+* **GHCR** - GitHub Container Registry for image storage.
+
+---
+
+## 🏗️ System Architecture
+
+The platform operates on a proxy-pattern architecture where the Node.js API Gateway handles client connections and authentication, securely routing internal requests to the Java backend.
+
+```text
+       [ Developer Push ]
+               │
+               ▼
+     [ GitHub Actions CI ] ──────► (1) Node/Java Unit Tests
+               │                 ► (2) Build Docker Images
+               ▼                 ► (3) Push to GHCR
+    [ Docker Compose Env ]
+               │
+               ▼
+  ┌─────────────────────────┐         ┌─────────────────────────┐
+  │   Node.js API Gateway   │ ──────► │   Java Spring Boot      │
+  │   (Port: 3000)          │  HTTP   │   Analytics Service     │
+  │ - JWT Authentication    │ ◄────── │   (Port: 8080)          │
+  │ - Request Proxying      │         │ - Data Aggregation      │
+  └─────────────────────────┘         └─────────────────────────┘
 ```
-devops-project/
+
+---
+
+## 📂 Folder Structure
+
+Adopted industry-standard monorepo structure for cohesive CI/CD management:
+
+```text
+multi-service-cicd-platform/
 │
-├── node-service/                   # Node.js API Gateway
-│   ├── src/
-│   │   ├── index.js                # Express app entry point
-│   │   ├── routes/
-│   │   │   ├── auth.js             # POST /login, /signup, /logout
-│   │   │   ├── dashboard.js        # GET /dashboard
-│   │   │   └── analytics.js        # GET /analytics (proxies to Java)
-│   │   ├── middleware/
-│   │   │   ├── auth.js             # JWT authentication guard
-│   │   │   ├── validators.js       # Input validation
-│   │   │   └── errorHandler.js     # Global error handler
-│   │   └── utils/
-│   │       └── logger.js           # Structured logger
-│   ├── tests/
-│   │   └── app.test.js             # Jest + Supertest integration tests
-│   ├── package.json
-│   ├── Dockerfile                  # Multi-stage Node.js image
-│   └── .dockerignore
+├── node-service/               # Node.js API Gateway
+│   ├── src/                    # Express application code
+│   ├── tests/                  # Jest integration tests
+│   ├── package.json            # Node dependencies
+│   └── Dockerfile              # Multi-stage Node build
 │
-├── java-service/                   # Spring Boot Analytics Microservice
-│   ├── src/
-│   │   ├── main/java/com/devops/platform/
-│   │   │   ├── JavaAnalyticsServiceApplication.java
-│   │   │   ├── controller/
-│   │   │   │   ├── ReportController.java   # GET /reports
-│   │   │   │   ├── LogController.java      # GET /logs
-│   │   │   │   └── MetricsController.java  # GET /metrics
-│   │   │   ├── service/
-│   │   │   │   ├── ReportService.java
-│   │   │   │   ├── LoggingService.java
-│   │   │   │   └── MetricsService.java
-│   │   │   ├── model/
-│   │   │   │   ├── ApiResponse.java        # Generic response wrapper
-│   │   │   │   ├── ReportDTO.java
-│   │   │   │   ├── LogEntryDTO.java
-│   │   │   │   └── MetricsDTO.java
-│   │   │   └── exception/
-│   │   │       ├── GlobalExceptionHandler.java
-│   │   │       └── ResourceNotFoundException.java
-│   │   ├── main/resources/
-│   │   │   └── application.yml
-│   │   └── test/java/com/devops/platform/
-│   │       ├── JavaAnalyticsServiceApplicationTests.java
-│   │       └── controller/
-│   │           ├── ReportControllerTest.java
-│   │           ├── LogControllerTest.java
-│   │           └── MetricsControllerTest.java
-│   ├── pom.xml                     # Maven build with Spring Boot 3.2 + JaCoCo
-│   ├── Dockerfile                  # Multi-stage Spring Boot image (layered JARs)
-│   └── .dockerignore
+├── java-service/               # Spring Boot Microservice
+│   ├── src/                    # Java source and tests
+│   ├── pom.xml                 # Maven configuration
+│   └── Dockerfile              # Layered Spring Boot build
 │
-├── docker-compose.yml              # Multi-container orchestration
-├── .github/
-│   └── workflows/
-│       └── ci-cd.yml               # 5-stage GitHub Actions pipeline
-├── .env.example                    # Template environment file
-├── .gitignore
+├── .github/workflows/          
+│   └── ci-cd.yml               # Complete pipeline definition
+│
+├── docker-compose.yml          # Local orchestration setup
+├── .env.example                # Environment variable templates
 └── README.md
 ```
+
+---
+
+## 🔄 CI/CD Workflow Explanation
+
+The `.github/workflows/ci-cd.yml` executes on every push to `main` or `dev` branches:
+
+1. **`node-tests`**: Sets up Node 18, installs dependencies via `npm ci`, and runs Jest tests enforcing coverage.
+2. **`java-tests`**: Sets up JDK 17, caches Maven packages, runs JUnit tests, and generates JaCoCo reports.
+3. **`docker-build`**: (Runs only if tests pass). Uses Docker Buildx to compile multi-stage images and push them to the GitHub Container Registry.
+4. **`integration-test`**: Spins up the entire stack using `docker-compose` inside the GitHub runner and executes HTTP health checks against both services.
+5. **`deploy`**: (Placeholder) Final stage triggering production deployment.
+
+---
+
+## 🐳 Docker Setup
+
+The project uses advanced Docker techniques:
+- **Multi-stage builds** to drastically reduce final image sizes (dropping build tools).
+- **Non-root users** (`appuser`) configured in Dockerfiles for enhanced security.
+- **Spring Boot Layered JARs** allowing Docker to cache dependencies separately from application code.
+- **Docker Compose Healthchecks** ensuring the API Gateway waits for the Java service to fully initialize.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Docker (v24+) & Docker Compose (v2+)
+- Git
 
-| Tool           | Minimum Version |
-|----------------|-----------------|
-| Docker         | 24.x            |
-| Docker Compose | 2.x             |
-| Node.js        | 18.x            |
-| Java (JDK)     | 17              |
-| Maven          | 3.9.x           |
+### 1. Installation Steps
 
----
-
-### 1️⃣ Clone and Configure
+Clone the repository and prepare the environment:
 
 ```bash
-git clone https://github.com/your-org/devops-platform.git
-cd devops-platform
+git clone git@github.com:deewakar05/multi-service-cicd-platform.git
+cd multi-service-cicd-platform
 
-# Copy and review environment variables
+# Setup environment variables
 cp .env.example .env
 ```
 
----
+### 2. Running the Application (Docker Compose)
 
-### 2️⃣ Run with Docker Compose (Recommended)
+Start the entire platform with one command:
 
 ```bash
-# Build images and start both services
-docker compose up --build
-
-# Run in background (detached)
 docker compose up --build -d
-
-# View logs from all services
-docker compose logs -f
-
-# View logs for a single service
-docker compose logs -f node-service
-docker compose logs -f java-service
-
-# Stop all services
-docker compose down
-
-# Stop and remove volumes
-docker compose down --volumes
 ```
 
-Services will be available at:
-- **Node.js API Gateway** → http://localhost:3000
-- **Java Analytics Service** → http://localhost:8080
-- **Spring Boot Actuator** → http://localhost:8080/actuator/health
-
----
-
-### 3️⃣ Run Services Locally (Without Docker)
-
-**Node.js Service:**
+Check the status of the containers:
 ```bash
-cd node-service
-npm install
-npm run dev          # Development with hot-reload
-# or
-npm start            # Production mode
-```
-
-**Java Service:**
-```bash
-cd java-service
-mvn spring-boot:run
-```
-
----
-
-## 🌐 API Reference
-
-### Node.js Service (Port 3000)
-
-| Method | Endpoint              | Auth Required | Description                  |
-|--------|-----------------------|---------------|------------------------------|
-| GET    | `/health`             | No            | Service health check         |
-| POST   | `/api/auth/signup`    | No            | Register a new user          |
-| POST   | `/api/auth/login`     | No            | Authenticate and get JWT     |
-| POST   | `/api/auth/logout`    | No            | Logout (stateless)           |
-| GET    | `/api/dashboard`      | ✅ JWT         | User dashboard summary       |
-| GET    | `/api/analytics`      | ✅ JWT         | Proxy → Java /reports        |
-| GET    | `/api/analytics/logs` | ✅ JWT         | Proxy → Java /logs           |
-| GET    | `/api/analytics/metrics` | ✅ JWT     | Proxy → Java /metrics        |
-
-### Java Service (Port 8080)
-
-| Method | Endpoint                    | Description                  |
-|--------|-----------------------------|------------------------------|
-| GET    | `/actuator/health`          | Spring Boot health check     |
-| GET    | `/reports`                  | List all analytics reports   |
-| GET    | `/reports/{id}`             | Get a single report by ID    |
-| GET    | `/reports/summary`          | Aggregated report statistics |
-| GET    | `/logs`                     | Recent log entries           |
-| GET    | `/logs/errors`              | Error-level logs only        |
-| GET    | `/logs/services/{name}`     | Logs filtered by service     |
-| GET    | `/metrics`                  | Full platform metrics        |
-| GET    | `/metrics/build`            | CI/CD build metrics          |
-| GET    | `/metrics/system`           | JVM system metrics           |
-
----
-
-## 🔐 Authentication Flow
-
-```bash
-# 1. Sign up
-curl -X POST http://localhost:3000/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{"username":"devuser","email":"dev@example.com","password":"MyPass@123"}'
-
-# 2. Login and extract token
-TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"dev@example.com","password":"MyPass@123"}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
-
-# 3. Access protected dashboard
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/dashboard
-
-# 4. Access analytics (proxied to Java service)
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/analytics
-```
-
----
-
-## 🧪 Testing
-
-### Node.js Tests
-
-```bash
-cd node-service
-npm test                    # Run all tests with coverage
-npm run test:watch          # Watch mode for development
-```
-
-### Java Tests
-
-```bash
-cd java-service
-mvn test                    # Run JUnit 5 tests
-mvn verify                  # Tests + JaCoCo coverage report
-```
-Coverage report: `java-service/target/site/jacoco/index.html`
-
----
-
-## 🔄 CI/CD Pipeline
-
-The GitHub Actions pipeline at `.github/workflows/ci-cd.yml` runs automatically on every push to `main` or `develop`:
-
-```
-Push to main
-     │
-     ├─► 🟢 node-tests      → npm install → npm test (Jest + coverage)
-     │
-     ├─► ☕ java-tests       → mvn verify (JUnit 5 + JaCoCo)
-     │
-     ├─► 🐳 docker-build     → Build + push images to GHCR (on main only)
-     │        (needs: node-tests + java-tests)
-     │
-     ├─► 🔗 integration-test → docker compose up → curl health checks
-     │        (needs: node-tests + java-tests)
-     │
-     └─► 🚀 deploy           → Production deployment
-              (needs: docker-build + integration-test, main only)
-```
-
----
-
-## 🐳 Docker Details
-
-### Image Tags
-
-| Service       | Image                              |
-|---------------|------------------------------------|
-| Node.js       | `ghcr.io/your-org/node-service:latest` |
-| Java          | `ghcr.io/your-org/java-service:latest` |
-
-### Useful Docker Commands
-
-```bash
-# Check container status
 docker compose ps
+```
 
-# Inspect health
-docker inspect --format='{{.State.Health.Status}}' node-api-gateway
-docker inspect --format='{{.State.Health.Status}}' java-analytics-service
+To view real-time logs:
+```bash
+docker compose logs -f
+```
 
-# Shell into a running container
-docker exec -it node-api-gateway sh
-docker exec -it java-analytics-service sh
-
-# Rebuild a single service
-docker compose up --build java-service
+To tear down the environment:
+```bash
+docker compose down -v
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## 🔌 API Endpoints
 
-| Variable              | Service | Default                          | Description              |
-|-----------------------|---------|----------------------------------|--------------------------|
-| `PORT`                | Node    | `3000`                           | HTTP port                |
-| `JWT_SECRET`          | Node    | `devops-platform-secret-key`     | JWT signing secret       |
-| `JWT_EXPIRES_IN`      | Node    | `1h`                             | Token lifetime           |
-| `JAVA_SERVICE_URL`    | Node    | `http://java-service:8080`       | Java service base URL    |
-| `LOG_LEVEL`           | Node    | `info`                           | Logging level            |
-| `PORT`                | Java    | `8080`                           | HTTP port                |
-| `APP_ENV`             | Java    | `development`                    | Application environment  |
+### 🟢 Node.js API Gateway (`http://localhost:3000`)
 
-> ⚠️ **Never commit your `.env` file!** Use the `.env.example` as a template.
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :---: | :--- |
+| `POST` | `/api/auth/signup` | ❌ | Register new user. |
+| `POST` | `/api/auth/login` | ❌ | Authenticate and receive JWT. |
+| `GET` | `/api/dashboard` | ✅ | Protected route returning user dashboard. |
+| `GET` | `/api/analytics` | ✅ | Proxies request to Java `/reports`. |
+| `GET` | `/api/analytics/logs` | ✅ | Proxies request to Java `/logs`. |
+| `GET` | `/api/analytics/metrics` | ✅ | Proxies request to Java `/metrics`. |
+| `GET` | `/health` | ❌ | Node.js container health check. |
 
----
+### ☕ Spring Boot Service (`http://localhost:8080`)
 
-## 📚 Tech Stack
+*(Usually accessed internally via the API Gateway on the Docker network)*
 
-| Layer       | Technology               | Version  |
-|-------------|--------------------------|----------|
-| API Gateway | Node.js + Express.js     | 18 LTS   |
-| Microservice| Spring Boot              | 3.2.x    |
-| Build Tool  | Apache Maven             | 3.9.x    |
-| Runtime     | JDK (Eclipse Temurin)    | 17       |
-| Container   | Docker                   | 24.x     |
-| Orchestration | Docker Compose         | 2.x      |
-| CI/CD       | GitHub Actions           | Latest   |
-| Testing (JS)| Jest + Supertest         | Latest   |
-| Testing (Java) | JUnit 5 + MockMvc   | Latest   |
-| Coverage (Java) | JaCoCo             | 0.8.11   |
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/reports` | Retrieves all analytics reports. |
+| `GET` | `/reports/{id}` | Retrieves a specific report. |
+| `GET` | `/logs` | Returns application log entries. |
+| `GET` | `/metrics` | JVM and platform performance metrics. |
+| `GET` | `/actuator/health` | Spring Boot operational status. |
 
 ---
 
-## 👨‍💻 Author
+## 🏥 Health Check Information
 
-Built as a production-grade academic DevOps project demonstrating real-world multi-service architecture, containerization, and CI/CD automation.
+The system implements robust self-healing and monitoring capabilities:
+- **Node.js (`/health`)**: Returns JSON indicating uptime and version. Docker uses this to verify the gateway is responsive.
+- **Java (`/actuator/health`)**: Native Spring Boot health indicator. The Node gateway uses `depends_on: condition: service_healthy` in Docker Compose to wait for this before starting.
+
+---
+
+## 📈 Future Enhancements
+- [ ] Implement Redis caching layer for the analytics endpoints.
+- [ ] Add Prometheus/Grafana integration for visual metric monitoring.
+- [ ] Migrate secret management to HashiCorp Vault.
+- [ ] Implement Terraform scripts for AWS infrastructure provisioning.
+
+---
+
+## 🧠 Learning Outcomes
+- Designing and securing inter-service communication over private Docker networks.
+- Crafting optimized, layered Dockerfiles for enterprise Java applications.
+- Structuring complex, multi-job GitHub Actions workflows.
+- Managing testing strategies across different language stacks in a monorepo.
+
+---
+
+## 📄 Resume Description
+> **Multi-Service CI/CD Platform** | *Node.js, Spring Boot, Docker, GitHub Actions*
+> - Architected a microservices platform featuring a Node.js API Gateway and a Java Spring Boot backend.
+> - Engineered a fully automated 5-stage CI/CD pipeline using GitHub Actions, enforcing testing thresholds via Jest and JaCoCo.
+> - Optimized containerization using multi-stage Docker builds and Spring Boot layered JARs, reducing deployment footprints.
+> - Orchestrated local development and integration testing environments using Docker Compose with robust health-check dependencies.
+
+---
+
+## 🤝 Contributing Guide
+Contributions are welcome! Please ensure you:
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`).
+3. Ensure all tests pass (`npm test` and `mvn verify`).
+4. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+5. Push to the branch (`git push origin feature/AmazingFeature`).
+6. Open a Pull Request against the `dev` branch.
+
+---
+
+## 📜 License
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 👨‍💻 Author Information
+**Deewakar Kumar**
+- GitHub: [@deewakar05](https://github.com/deewakar05)
