@@ -1,0 +1,295 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# GitHub Actions CI/CD Workflow
+# Multi-Service CI/CD Automation Platform
+#
+# Pipeline Stages:
+#   1. node-tests    — Install deps, lint, and run Jest tests for Node.js
+#   2. java-tests    — Run Maven build and JUnit tests for Spring Boot
+#   3. docker-build  — Build Docker images for both services
+#   4. integration   — Start services via Docker Compose and verify health
+#   5. deploy        — (Placeholder) Deploy to target environment
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI/CD Pipeline — Multi-Service Platform
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  JAVA_VERSION: "17"
+  NODE_VERSION: "18"
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}
+
+# Cancel in-progress runs on the same branch to save CI minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 1: Node.js Tests
+  # ─────────────────────────────────────────────────────────────────────────
+  node-tests:
+    name: 🟢 Node.js — Install & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node-service
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: node-service/package-lock.json
+
+      - name: 📦 Install Node.js dependencies
+        run: npm ci
+
+      - name: 🧪 Run Node.js test suite with coverage
+        run: npm test -- --ci --coverage
+
+      - name: 📊 Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: node-coverage-report
+          path: node-service/coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 2: Java / Maven Tests
+  # ─────────────────────────────────────────────────────────────────────────
+  java-tests:
+    name: ☕ Java — Maven Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: java-service
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: 🔨 Maven — compile and run tests
+        run: mvn clean verify -B --no-transfer-progress
+
+      - name: 📊 Upload JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: java-coverage-report
+          path: java-service/target/site/jacoco/
+          retention-days: 7
+
+      - name: 📦 Upload compiled JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-service-jar
+          path: java-service/target/*.jar
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 3: Docker Image Build
+  # Depends on both test jobs passing.
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker — Build Images
+    runs-on: ubuntu-latest
+    needs: [node-tests, java-tests]
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build Node.js Image ─────────────────────────────────────────────
+      - name: 🟢 Build Node.js Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node-service
+          file: ./node-service/Dockerfile
+          target: production
+          push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/node-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/node-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Build Java Image ────────────────────────────────────────────────
+      - name: ☕ Build Java Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./java-service
+          file: ./java-service/Dockerfile
+          target: production
+          push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 4: Integration Test — Docker Compose
+  # Starts both containers and verifies health endpoints.
+  # ─────────────────────────────────────────────────────────────────────────
+  integration-test:
+    name: 🔗 Integration — Docker Compose Health Check
+    runs-on: ubuntu-latest
+    needs: [node-tests, java-tests]
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🚀 Build and start all services with Docker Compose
+        env:
+          APP_ENV: ci
+          NODE_ENV: production
+          JWT_SECRET: ci-test-secret-key-not-for-production
+        run: docker compose up --build -d
+
+      - name: ⏳ Wait for services to become healthy (max 90s)
+        run: |
+          echo "Waiting for Java service health check..."
+          for i in $(seq 1 18); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "✅ Java service is healthy"
+              break
+            fi
+            echo "  Attempt $i/18 — waiting 5s..."
+            sleep 5
+          done
+
+          echo "Waiting for Node.js service health check..."
+          for i in $(seq 1 12); do
+            if curl -sf http://localhost:3000/health > /dev/null; then
+              echo "✅ Node.js service is healthy"
+              break
+            fi
+            echo "  Attempt $i/12 — waiting 5s..."
+            sleep 5
+          done
+
+      - name: 🧪 Verify Node.js API Gateway health
+        run: |
+          RESPONSE=$(curl -sf http://localhost:3000/health)
+          echo "Node.js response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"status":"UP"'
+          echo "✅ Node.js health check PASSED"
+
+      - name: 🧪 Verify Java Analytics Service health
+        run: |
+          RESPONSE=$(curl -sf http://localhost:8080/actuator/health)
+          echo "Java response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"status":"UP"'
+          echo "✅ Java health check PASSED"
+
+      - name: 🧪 Verify Java /reports endpoint
+        run: |
+          RESPONSE=$(curl -sf http://localhost:8080/reports)
+          echo "Reports response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"success":true'
+          echo "✅ /reports endpoint PASSED"
+
+      - name: 🧪 Verify Java /metrics endpoint
+        run: |
+          RESPONSE=$(curl -sf http://localhost:8080/metrics)
+          echo "Metrics response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"success":true'
+          echo "✅ /metrics endpoint PASSED"
+
+      - name: 🧪 Verify Java /logs endpoint
+        run: |
+          RESPONSE=$(curl -sf http://localhost:8080/logs)
+          echo "Logs response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"success":true'
+          echo "✅ /logs endpoint PASSED"
+
+      - name: 📋 Print Docker Compose service status
+        if: always()
+        run: docker compose ps
+
+      - name: 📋 Print service logs on failure
+        if: failure()
+        run: docker compose logs --tail=100
+
+      - name: 🛑 Tear down Docker Compose
+        if: always()
+        run: docker compose down --volumes --remove-orphans
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 5: Deploy (Placeholder — customise for your environment)
+  # Only runs on successful push to main branch.
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy — Production
+    runs-on: ubuntu-latest
+    needs: [docker-build, integration-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to production environment
+        run: |
+          echo "========================================"
+          echo "  Deploying Multi-Service Platform"
+          echo "  Commit: ${{ github.sha }}"
+          echo "  Actor:  ${{ github.actor }}"
+          echo "========================================"
+          echo ""
+          echo "📦 Images to deploy:"
+          echo "  • ghcr.io/${{ env.IMAGE_PREFIX }}/node-service:${{ github.sha }}"
+          echo "  • ghcr.io/${{ env.IMAGE_PREFIX }}/java-service:${{ github.sha }}"
+          echo ""
+          echo "ℹ️  Replace this step with your actual deployment command:"
+          echo "   - SSH + docker compose pull && docker compose up -d"
+          echo "   - kubectl set image deployment/..."
+          echo "   - aws ecs update-service ..."
+          echo ""
+          echo "✅ Deployment step completed successfully"
+
+      - name: 📢 Post deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u) |" >> $GITHUB_STEP_SUMMARY

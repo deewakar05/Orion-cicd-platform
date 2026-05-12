@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Spring Boot Application Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+spring:
+  application:
+    name: java-analytics-service
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ─── Spring Boot Actuator ─────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+# ─── Application Info (exposed via /actuator/info) ────────────────────────────
+info:
+  app:
+    name: ${spring.application.name}
+    version: 1.0.0
+    description: Multi-Service CI/CD Platform — Java Analytics Microservice
+    environment: ${APP_ENV:development}
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.devops.platform: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

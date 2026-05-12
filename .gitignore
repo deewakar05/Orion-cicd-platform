@@ -1,0 +1,6 @@
+.env
+node-service/node_modules/
+node-service/coverage/
+java-service/target/
+*.log
+.DS_Store
