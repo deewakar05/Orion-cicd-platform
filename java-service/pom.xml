@@ -22,7 +22,7 @@
 
   <name>java-analytics-service</name>
   <description>Multi-Service CI/CD Platform — Java Spring Boot Analytics Microservice</description>
-  <url>https://github.com/your-org/devops-platform</url>
+  <url>https://github.com/deewakar05/multi-service-cicd-platform</url>
 
   <!-- ─── Java Version ───────────────────────────────────────────────────── -->
   <properties>
