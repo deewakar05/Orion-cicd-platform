@@ -51,10 +51,15 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  logger.info(`🚀 Node.js API Gateway running on port ${PORT}`);
-  logger.info(`🔗 Java microservice URL: ${process.env.JAVA_SERVICE_URL || 'http://java-service:8080'}`);
-});
+// Only start the HTTP server when this file is run directly.
+// When required by tests (supertest), the server is not bound to a port.
+/* istanbul ignore next */
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    logger.info(`🚀 Node.js API Gateway running on port ${PORT}`);
+    logger.info(`🔗 Java microservice URL: ${process.env.JAVA_SERVICE_URL || 'http://java-service:8080'}`);
+  });
+}
 
 module.exports = app; // exported for testing
