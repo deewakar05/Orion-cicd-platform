@@ -2,12 +2,13 @@
 # Docker Compose — Multi-Service CI/CD Automation Platform
 #
 # Services:
-#   - node-service   : Node.js API Gateway (port 3000)
+#   - postgres       : PostgreSQL 15 database (internal only, port 5432)
 #   - java-service   : Spring Boot Analytics Microservice (port 8080)
+#   - node-service   : Node.js API Gateway (port 3000)
 #
 # Usage:
 #   docker compose up --build       # Build and start all services
-#   docker compose down             # Stop and remove containers
+#   docker compose down -v          # Stop and remove containers + volumes
 #   docker compose logs -f          # Follow logs from all services
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -21,11 +22,35 @@ networks:
 
 # ─── Named Volumes ────────────────────────────────────────────────────────────
 volumes:
+  postgres-data:          # Persistent database storage
   node-logs:
   java-logs:
 
 # ─── Services ─────────────────────────────────────────────────────────────────
 services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: devops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-devopsdb}
+      POSTGRES_USER: ${POSTGRES_USER:-devops_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - devops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devops_admin} -d ${POSTGRES_DB:-devopsdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "com.devops.service=postgres"
+      - "com.devops.version=15"
 
   # ── Java Spring Boot Analytics Microservice ──────────────────────────────
   java-service:
@@ -42,17 +67,24 @@ services:
       - PORT=8080
       - APP_ENV=${APP_ENV:-production}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-devopsdb}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-devops_admin}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-changeme_in_production}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${JPA_DDL_AUTO:-update}
     volumes:
       - java-logs:/app/logs
     networks:
       - devops-network
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
              "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 45s
     labels:
       - "com.devops.service=java-analytics"
       - "com.devops.version=1.0.0"
@@ -76,6 +108,7 @@ services:
       - JAVA_SERVICE_URL=http://java-service:8080
       - JAVA_REQUEST_TIMEOUT=5000
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-devops_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/${POSTGRES_DB:-devopsdb}
     volumes:
       - node-logs:/app/logs
     networks:

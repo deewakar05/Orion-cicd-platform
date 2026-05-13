@@ -1,25 +1,31 @@
 /**
  * Authentication Routes
- * Handles user login and signup with JWT generation.
+ * Handles user login and signup with bcrypt password hashing and JWT generation.
+ *
+ * NOTE: User data is stored in-memory for demo/portfolio purposes.
+ *       In a full production deployment, replace `users` Map with a
+ *       PostgreSQL or MongoDB database integration (see Future Enhancements in README).
  */
 
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { validateLogin, validateSignup } = require('../middleware/validators');
 const logger = require('../utils/logger');
 
-// In-memory user store (replace with a real DB in production)
+// In-memory user store — swap with DB client (pg, mongoose, etc.) for persistence
 const users = new Map();
 
+const BCRYPT_SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'devops-platform-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
 /**
  * POST /api/auth/signup
- * Register a new user
+ * Register a new user. Password is hashed with bcrypt before storage.
  */
-router.post('/signup', validateSignup, (req, res) => {
+router.post('/signup', validateSignup, async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
 
@@ -30,12 +36,14 @@ router.post('/signup', validateSignup, (req, res) => {
       });
     }
 
-    // Store user (in production, hash the password with bcrypt)
+    // Hash the password before storing — bcrypt adds automatic salting
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
     const newUser = {
       id: Date.now().toString(),
       username,
       email,
-      password, // NOTE: hash this in production!
+      password: hashedPassword,
       role: role || 'user',
       createdAt: new Date().toISOString(),
     };
@@ -65,14 +73,23 @@ router.post('/signup', validateSignup, (req, res) => {
 
 /**
  * POST /api/auth/login
- * Authenticate a user and return a JWT
+ * Authenticate a user. Uses bcrypt.compare to validate the hashed password.
  */
-router.post('/login', validateLogin, (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = users.get(email);
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+
+    // Secure constant-time comparison — prevents timing attacks
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -104,10 +121,9 @@ router.post('/login', validateLogin, (req, res) => {
 
 /**
  * POST /api/auth/logout
- * Invalidate session (client should delete the token)
+ * Stateless JWT logout — instructs client to discard the token.
  */
 router.post('/logout', (req, res) => {
-  // Stateless JWT — instruct client to discard token
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 });
 

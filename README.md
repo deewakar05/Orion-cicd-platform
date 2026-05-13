@@ -40,11 +40,17 @@ Designed to industry standards, this repository showcases how modern microservic
 ### Frontend / API Gateway
 * **Node.js & Express.js** - High-performance non-blocking API routing.
 * **Jest & Supertest** - Comprehensive integration testing.
+* **bcrypt** - Industry-standard password hashing (10-round salting).
 
 ### Backend Microservice
 * **Java 17 & Spring Boot 3.2** - Enterprise-grade backend processing.
+* **Spring Data JPA** - ORM layer connecting to PostgreSQL.
 * **Maven** - Dependency and lifecycle management.
 * **Lombok** - Boilerplate reduction.
+
+### Data Layer
+* **PostgreSQL 15** - Persistent relational database for users and analytics data.
+* **H2 (test only)** - In-memory database for fast CI/CD unit tests.
 
 ### DevOps & Infrastructure
 * **Docker & Docker Compose** - Containerization and local orchestration.
@@ -62,13 +68,32 @@ Developer Push
       ↓
 GitHub Actions
       ↓
-Maven Build + Test
+Maven Build + Test (H2 in-memory DB)
       ↓
-Docker Build
+Jest Test Suite + bcrypt Auth
       ↓
-Docker Hub Push
+Docker Build (multi-stage)
       ↓
-Deployment
+Integration Tests (Docker Compose + PostgreSQL)
+      ↓
+GHCR Image Push
+      ↓
+Production Deployment
+```
+
+### Service Communication
+
+```text
+[Client]
+    │
+    ▼
+[Node.js API Gateway :3000]  ←── JWT Auth + bcrypt
+    │           │
+    │           ▼
+    │   [Java Analytics :8080]
+    │           │
+    ▼           ▼
+[PostgreSQL :5432]  ←── Shared persistent DB
 ```
 
 ---
@@ -79,12 +104,10 @@ Adopted industry-standard monorepo structure for cohesive CI/CD management:
 
 ```text
 multi-service-cicd-platform/
-│── java-service/               # Spring Boot Microservice
-│── node-service/               # Node.js API Gateway
+│── java-service/               # Spring Boot Microservice (JPA + PostgreSQL)
+│── node-service/               # Node.js API Gateway (bcrypt + JWT)
 │── .github/workflows/          # Complete pipeline definition
-│── docs/                       # Project Documentation
-│── screenshots/                # Application & Pipeline Screenshots
-│── docker-compose.yml          # Local orchestration setup
+│── docker-compose.yml          # Local orchestration (+ PostgreSQL)
 │── .env.example                # Environment variable templates
 └── README.md
 ```
@@ -109,7 +132,8 @@ The project uses advanced Docker techniques:
 - **Multi-stage builds** to drastically reduce final image sizes (dropping build tools).
 - **Non-root users** (`appuser`) configured in Dockerfiles for enhanced security.
 - **Spring Boot Layered JARs** allowing Docker to cache dependencies separately from application code.
-- **Docker Compose Healthchecks** ensuring the API Gateway waits for the Java service to fully initialize.
+- **Docker Compose Healthchecks** ensuring the API Gateway waits for the Java service, which in turn waits for PostgreSQL to be fully ready.
+- **Strict test enforcement** — `RUN npm test` (no `|| true`) ensures the build fails if any test fails.
 
 ---
 
@@ -146,17 +170,18 @@ cd multi-service-cicd-platform
 
 # Setup environment variables
 cp .env.example .env
+# Edit .env and set POSTGRES_PASSWORD and JWT_SECRET to strong values
 ```
 
 ### 2. Running the Application (Docker Compose)
 
-Start the entire platform with one command:
+Start the entire platform (PostgreSQL + Java + Node.js) with one command:
 
 ```bash
 docker compose up --build -d
 ```
 
-Check the status of the containers:
+Check the status of all containers:
 ```bash
 docker compose ps
 ```
@@ -166,7 +191,7 @@ To view real-time logs:
 docker compose logs -f
 ```
 
-To tear down the environment:
+To tear down the environment (including database volume):
 ```bash
 docker compose down -v
 ```
@@ -209,11 +234,32 @@ The system implements robust self-healing and monitoring capabilities:
 
 ---
 
+---
+
+## 🔑 Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `JWT_SECRET` | `change-this` | Secret key for signing JWTs — **must be changed in production** |
+| `JWT_EXPIRES_IN` | `1h` | JWT token validity window |
+| `POSTGRES_DB` | `devopsdb` | PostgreSQL database name |
+| `POSTGRES_USER` | `devops_admin` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `changeme_in_production` | PostgreSQL password — **must be changed in production** |
+| `SPRING_PROFILES_ACTIVE` | `default` | Spring Boot active profile |
+| `JPA_DDL_AUTO` | `update` | Hibernate schema strategy (`update`, `validate`, `none`) |
+| `LOG_LEVEL` | `info` | Node.js logging verbosity |
+| `NODE_ENV` | `production` | Node.js environment |
+
+---
+
 ## 📈 Future Enhancements
 - [ ] Implement Redis caching layer for the analytics endpoints.
 - [ ] Add Prometheus/Grafana integration for visual metric monitoring.
 - [ ] Migrate secret management to HashiCorp Vault.
 - [ ] Implement Terraform scripts for AWS infrastructure provisioning.
+- [ ] Deploy to Railway / Render / AWS EC2 for live cloud access.
 
 ---
 

@@ -23,7 +23,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Run the test suite — build will fail if tests fail
-RUN npm test || true
+RUN npm test
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 3 — Production Runtime
