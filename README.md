@@ -2,7 +2,7 @@
   <h1>🚀 Enterprise Multi-Service CI/CD Automation Platform</h1>
   <p><strong>Enterprise-Grade DevOps Pipeline using GitHub Actions, Docker, and Maven</strong></p>
 
-  [![CI/CD Pipeline](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml)
+  [![CI/CD Pipeline](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml/badge.svg?branch=main&event=push)](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml)
   [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg?logo=node.js)](https://nodejs.org/)
   [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.x-brightgreen.svg?logo=spring-boot)](https://spring.io/projects/spring-boot)
   [![Docker](https://img.shields.io/badge/Docker-24.x-blue.svg?logo=docker)](https://www.docker.com/)
