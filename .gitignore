@@ -1,6 +1,33 @@
+# ─── OS & Editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+*.iml
+.vscode/settings.json
+
+# ─── Secrets ──────────────────────────────────────────────────────────────────
 .env
+.env.local
+.env.production
+
+# ─── Node.js ──────────────────────────────────────────────────────────────────
 node-service/node_modules/
 node-service/coverage/
+node-service/npm-debug.log*
+node-service/.npm
+
+# ─── Java / Maven ─────────────────────────────────────────────────────────────
 java-service/target/
+java-service/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
 *.log
-.DS_Store
+logs/
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.override.yml

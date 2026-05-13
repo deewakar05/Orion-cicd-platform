@@ -1,6 +1,9 @@
 /**
  * Dashboard Routes
  * Returns summary data for the authenticated user's dashboard.
+ *
+ * Note: summary counters are demo/seed data for portfolio demonstration.
+ * In a production system, these would be queried from the PostgreSQL database.
  */
 
 const express = require('express');
@@ -17,17 +20,19 @@ router.get('/', authenticate, (req, res) => {
   try {
     logger.info(`Dashboard accessed by user: ${req.user.email}`);
 
+    // Demo data — illustrates the expected response shape.
+    // Replace with real DB queries when connecting Node.js to PostgreSQL.
     const dashboardData = {
       success: true,
       data: {
         user: req.user,
         summary: {
-          totalDeployments: 142,
-          successfulBuilds: 138,
-          failedBuilds: 4,
+          totalDeployments: 12,
+          successfulBuilds: 11,
+          failedBuilds: 1,
           averageBuildTime: '2m 34s',
-          activeContainers: 6,
-          servicesRunning: ['node-service', 'java-service'],
+          activeContainers: 3,
+          servicesRunning: ['node-service', 'java-service', 'postgres'],
         },
         recentActivity: [
           {
@@ -53,9 +58,9 @@ router.get('/', authenticate, (req, res) => {
           },
           {
             id: 4,
-            action: 'Test suite run',
+            action: 'Integration tests run',
             service: 'java-service',
-            status: 'failed',
+            status: 'success',
             timestamp: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
           },
         ],
@@ -63,7 +68,6 @@ router.get('/', authenticate, (req, res) => {
           nodeService: 'healthy',
           javaService: 'healthy',
           database: 'healthy',
-          cache: 'healthy',
         },
         timestamp: new Date().toISOString(),
       },
