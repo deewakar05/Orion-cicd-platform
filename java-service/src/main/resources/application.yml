@@ -15,20 +15,26 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:changeme_in_production}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 20000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
       idle-timeout: 300000
+      # Retry logic: attempt to acquire connection before failing startup
+      initialization-fail-timeout: 60000
 
   # ─── JPA / Hibernate ────────────────────────────────────────────────────
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
 
 server:
   port: ${PORT:8080}
@@ -64,5 +70,8 @@ logging:
   level:
     root: INFO
     com.devops.platform: DEBUG
+    # Suppress noisy Hibernate startup logs in production
+    org.hibernate.tool.schema: WARN
+    org.hibernate.orm.connections: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

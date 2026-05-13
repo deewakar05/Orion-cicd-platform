@@ -35,6 +35,8 @@ services:
     container_name: devops-postgres
     restart: unless-stopped
     environment:
+      # Use explicit env vars — Docker Compose variable substitution in
+      # CMD-SHELL healthcheck arrays requires plain env vars, not ${:-} syntax
       POSTGRES_DB: ${POSTGRES_DB:-devopsdb}
       POSTGRES_USER: ${POSTGRES_USER:-devops_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
@@ -43,11 +45,13 @@ services:
     networks:
       - devops-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devops_admin} -d ${POSTGRES_DB:-devopsdb}"]
+      # Use POSTGRES_USER/POSTGRES_DB env vars which are directly set above —
+      # pg_isready reads PGUSER / PGDATABASE from the container environment
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 10
+      start_period: 30s
     labels:
       - "com.devops.service=postgres"
       - "com.devops.version=15"
@@ -79,12 +83,12 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:8080/actuator/health"]
-      interval: 30s
+      # wget is available in eclipse-temurin:17-jre-alpine via busybox
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
       timeout: 10s
-      retries: 5
-      start_period: 45s
+      retries: 8
+      start_period: 90s
     labels:
       - "com.devops.service=java-analytics"
       - "com.devops.version=1.0.0"
@@ -117,12 +121,12 @@ services:
       java-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
-             "http://localhost:3000/health"]
-      interval: 30s
+      # wget is available in node:18-alpine via busybox
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     labels:
       - "com.devops.service=node-api-gateway"
       - "com.devops.version=1.0.0"

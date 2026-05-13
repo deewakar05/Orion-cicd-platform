@@ -169,12 +169,24 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────────
   # JOB 4: Integration Test — Docker Compose
-  # Starts both containers and verifies health endpoints.
+  # Builds all 3 containers (postgres + java + node), waits for each
+  # to become healthy, then validates all API endpoints.
   # ─────────────────────────────────────────────────────────────────────────
   integration-test:
     name: 🔗 Integration — Docker Compose Health Check
     runs-on: ubuntu-latest
     needs: [node-tests, java-tests]
+
+    # ── All DB credentials explicitly set so docker-compose variable
+    # substitution works correctly in both healthchecks and env blocks ──────
+    env:
+      POSTGRES_DB: devopsdb
+      POSTGRES_USER: devops_admin
+      POSTGRES_PASSWORD: ci-postgres-password
+      APP_ENV: ci
+      NODE_ENV: production
+      JWT_SECRET: ci-test-secret-key-not-for-production
+      JPA_DDL_AUTO: update
 
     steps:
       - name: 📥 Checkout repository
@@ -183,35 +195,70 @@ jobs:
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # ── Build and launch all services in background ─────────────────────
       - name: 🚀 Build and start all services with Docker Compose
-        env:
-          APP_ENV: ci
-          NODE_ENV: production
-          JWT_SECRET: ci-test-secret-key-not-for-production
         run: docker compose up --build -d
 
-      - name: ⏳ Wait for services to become healthy (max 90s)
+      # ── Give PostgreSQL time to initialise before polling ───────────────
+      - name: ⏳ Initial startup buffer (30s for PostgreSQL + JVM warmup)
         run: |
-          echo "Waiting for Java service health check..."
-          for i in $(seq 1 18); do
-            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
-              echo "✅ Java service is healthy"
-              break
+          echo "Sleeping 30s to allow PostgreSQL to accept connections..."
+          sleep 30
+
+      # ── Show early container state for debugging ─────────────────────────
+      - name: 🔍 Show container status after initial wait
+        run: docker compose ps
+
+      # ── Poll Java service with strict failure on timeout ─────────────────
+      - name: ⏳ Wait for Java service to become healthy (max 3 min)
+        run: |
+          echo "Polling Java Spring Boot service..."
+          MAX_ATTEMPTS=36
+          ATTEMPT=0
+          until curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+              echo "❌ Java service did not become healthy after ${MAX_ATTEMPTS} attempts ($(( MAX_ATTEMPTS * 5 ))s)"
+              echo ""
+              echo "=== Docker Compose Status ==="
+              docker compose ps
+              echo ""
+              echo "=== Java Service Logs ==="
+              docker compose logs java-service --tail=60
+              echo ""
+              echo "=== PostgreSQL Logs ==="
+              docker compose logs postgres --tail=30
+              exit 1
             fi
-            echo "  Attempt $i/18 — waiting 5s..."
+            echo "  Attempt ${ATTEMPT}/${MAX_ATTEMPTS} — Java not ready, waiting 5s..."
             sleep 5
           done
+          echo "✅ Java service is healthy after ${ATTEMPT} attempt(s)"
 
-          echo "Waiting for Node.js service health check..."
-          for i in $(seq 1 12); do
-            if curl -sf http://localhost:3000/health > /dev/null; then
-              echo "✅ Node.js service is healthy"
-              break
+      # ── Poll Node.js service with strict failure on timeout ──────────────
+      - name: ⏳ Wait for Node.js service to become healthy (max 90s)
+        run: |
+          echo "Polling Node.js API Gateway..."
+          MAX_ATTEMPTS=18
+          ATTEMPT=0
+          until curl -sf http://localhost:3000/health > /dev/null 2>&1; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+              echo "❌ Node.js service did not become healthy after ${MAX_ATTEMPTS} attempts ($(( MAX_ATTEMPTS * 5 ))s)"
+              echo ""
+              echo "=== Docker Compose Status ==="
+              docker compose ps
+              echo ""
+              echo "=== Node.js Service Logs ==="
+              docker compose logs node-service --tail=60
+              exit 1
             fi
-            echo "  Attempt $i/12 — waiting 5s..."
+            echo "  Attempt ${ATTEMPT}/${MAX_ATTEMPTS} — Node.js not ready, waiting 5s..."
             sleep 5
           done
+          echo "✅ Node.js service is healthy after ${ATTEMPT} attempt(s)"
 
+      # ── API Endpoint Validation ──────────────────────────────────────────
       - name: 🧪 Verify Node.js API Gateway health
         run: |
           RESPONSE=$(curl -sf http://localhost:3000/health)
@@ -247,13 +294,22 @@ jobs:
           echo "$RESPONSE" | grep -q '"success":true'
           echo "✅ /logs endpoint PASSED"
 
+      # ── Always-run diagnostics and cleanup ───────────────────────────────
       - name: 📋 Print Docker Compose service status
         if: always()
         run: docker compose ps
 
-      - name: 📋 Print service logs on failure
+      - name: 📋 Print all service logs on failure
         if: failure()
-        run: docker compose logs --tail=100
+        run: |
+          echo "=== PostgreSQL ==="
+          docker compose logs postgres --tail=50
+          echo ""
+          echo "=== Java Service ==="
+          docker compose logs java-service --tail=80
+          echo ""
+          echo "=== Node.js Service ==="
+          docker compose logs node-service --tail=50
 
       - name: 🛑 Tear down Docker Compose
         if: always()

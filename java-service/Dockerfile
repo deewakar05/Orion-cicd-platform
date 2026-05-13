@@ -11,9 +11,9 @@ WORKDIR /build
 COPY pom.xml .
 RUN mvn dependency:go-offline -B --no-transfer-progress
 
-# Copy source and run the full build + tests
+# Copy source and package (tests already run in the dedicated CI job)
 COPY src ./src
-RUN mvn clean package -B --no-transfer-progress -DskipTests=false
+RUN mvn clean package -B --no-transfer-progress -DskipTests=true
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — Extract Layers (Spring Boot layered JARs)
@@ -55,8 +55,8 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
                -XX:+UseG1GC \
                -Djava.security.egd=file:/dev/./urandom"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+# Health check — generous start_period for JVM + JPA/PostgreSQL init time
+HEALTHCHECK --interval=15s --timeout=10s --start-period=90s --retries=5 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 # Launch via Spring Boot loader (supports layered JARs)
