@@ -339,6 +339,23 @@ docker compose up --build -d
 
 ---
 
+## 📦 Frontend Dependency Management
+
+Whenever frontend dependencies change:
+
+```bash
+npm install
+```
+
+Commit both:
+
+* `package.json`
+* `package-lock.json`
+
+This ensures that the GitHub Actions `npm ci` command succeeds.
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please:
