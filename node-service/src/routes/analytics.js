@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorizeRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 const JAVA_SERVICE_URL = process.env.JAVA_SERVICE_URL || 'http://java-service:8080';
@@ -39,8 +39,9 @@ const proxyToJava = async (path, res) => {
 /**
  * GET /api/analytics
  * Proxies to GET /reports on the Java service — general analytics overview.
+ * Accessible by admin and analyst.
  */
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, authorizeRole('admin', 'analyst'), async (req, res) => {
   logger.info(`Analytics overview requested by: ${req.user.email}`);
   await proxyToJava('/reports', res);
 });
@@ -48,8 +49,9 @@ router.get('/', authenticate, async (req, res) => {
 /**
  * GET /api/analytics/logs
  * Proxies to GET /logs on the Java service.
+ * Accessible by admin only.
  */
-router.get('/logs', authenticate, async (req, res) => {
+router.get('/logs', authenticate, authorizeRole('admin'), async (req, res) => {
   logger.info(`Logs requested by: ${req.user.email}`);
   await proxyToJava('/logs', res);
 });
@@ -57,8 +59,9 @@ router.get('/logs', authenticate, async (req, res) => {
 /**
  * GET /api/analytics/metrics
  * Proxies to GET /metrics on the Java service.
+ * Accessible by admin and analyst.
  */
-router.get('/metrics', authenticate, async (req, res) => {
+router.get('/metrics', authenticate, authorizeRole('admin', 'analyst'), async (req, res) => {
   logger.info(`Metrics requested by: ${req.user.email}`);
   await proxyToJava('/metrics', res);
 });

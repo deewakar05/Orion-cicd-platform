@@ -37,5 +37,22 @@ const authenticate = (req, res, next) => {
     return res.status(403).json({ success: false, message: 'Invalid token' });
   }
 };
+/**
+ * Middleware: authorizeRole
+ * Checks if the authenticated user has the required role.
+ * Must be used AFTER the authenticate middleware.
+ */
+const authorizeRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      logger.warn(`Access denied. Required roles: ${roles.join(', ')} - User role: ${req.user?.role}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Insufficient permissions.',
+      });
+    }
+    next();
+  };
+};
 
-module.exports = { authenticate };
+module.exports = { authenticate, authorizeRole };

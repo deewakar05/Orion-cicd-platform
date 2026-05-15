@@ -25,6 +25,8 @@ volumes:
   postgres-data:          # Persistent database storage
   node-logs:
   java-logs:
+  prometheus-data:
+  grafana-data:
 
 # ─── Services ─────────────────────────────────────────────────────────────────
 services:
@@ -164,3 +166,36 @@ services:
       - node-service
     labels:
       - "com.devops.service=nginx-proxy"
+
+  # ── Prometheus Monitoring ────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - devops-network
+    labels:
+      - "com.devops.service=prometheus"
+
+  # ── Grafana Dashboards ───────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - devops-network
+    depends_on:
+      - prometheus
+    labels:
+      - "com.devops.service=grafana"

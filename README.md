@@ -126,7 +126,7 @@ Each service waits for its dependency to pass a health check before starting.
 ## 📁 Project Structure
 
 ```
-multi-service-cicd-platform/
+Orion-cicd-platform/
 ├── .github/
 │   └── workflows/
 │       └── ci-cd.yml          # 5-stage GitHub Actions pipeline
@@ -179,8 +179,8 @@ The pipeline is defined in [`.github/workflows/ci-cd.yml`](.github/workflows/ci-
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/deewakar05/multi-service-cicd-platform.git
-cd multi-service-cicd-platform
+git clone https://github.com/deewakar05/Orion-cicd-platform.git
+cd Orion-cicd-platform
 
 # Create your local environment file
 cp .env.example .env
