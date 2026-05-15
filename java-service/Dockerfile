@@ -3,7 +3,7 @@
 # Uses the official Maven image to compile and package the application.
 # Dependencies are cached in a separate layer for faster re-builds.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 
 WORKDIR /build
 
@@ -19,7 +19,7 @@ RUN mvn clean package -B --no-transfer-progress -DskipTests=true
 # Stage 2 — Extract Layers (Spring Boot layered JARs)
 # Optimises final image layer caching: dependencies rarely change but code does.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:17-jre-alpine AS layers
+FROM eclipse-temurin:17-jre-jammy AS layers
 
 WORKDIR /app
 COPY --from=build /build/target/*.jar application.jar
@@ -29,10 +29,10 @@ RUN java -Djarmode=layertools -jar application.jar extract
 # Stage 3 — Production Runtime
 # Minimal JRE image. Non-root user. Layered JARs for fast startup.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:17-jre-alpine AS production
+FROM eclipse-temurin:17-jre-jammy AS production
 
 # Security: run as non-root
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 WORKDIR /app
 
