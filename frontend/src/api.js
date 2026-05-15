@@ -3,8 +3,8 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: '/api', // This will be proxied by Nginx to the Node Gateway
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
 // Request interceptor to add the JWT token to headers

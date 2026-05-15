@@ -51,7 +51,9 @@ const Dashboard = () => {
             <h1 className="text-xl font-bold">DevOps Platform</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium">{user.name} ({user.role})</span>
+            <span className="text-sm font-medium">
+              {user.name} ({user.role})
+            </span>
             <button
               onClick={handleLogout}
               className="flex items-center space-x-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -71,15 +73,19 @@ const Dashboard = () => {
             {/* Cards */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Deployments</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Total Deployments
+                </p>
                 <Box className="h-5 w-5 text-indigo-500" />
               </div>
               <p className="mt-2 text-3xl font-bold">{summary.totalDeployments}</p>
             </div>
-            
+
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Successful Builds</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Successful Builds
+                </p>
                 <CheckCircle className="h-5 w-5 text-green-500" />
               </div>
               <p className="mt-2 text-3xl font-bold">{summary.successfulBuilds}</p>
@@ -87,7 +93,9 @@ const Dashboard = () => {
 
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Failed Builds</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Failed Builds
+                </p>
                 <XCircle className="h-5 w-5 text-red-500" />
               </div>
               <p className="mt-2 text-3xl font-bold">{summary.failedBuilds}</p>
@@ -95,7 +103,9 @@ const Dashboard = () => {
 
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Build Time</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Avg Build Time
+                </p>
                 <Clock className="h-5 w-5 text-orange-500" />
               </div>
               <p className="mt-2 text-3xl font-bold">{summary.averageBuildTime}</p>
@@ -109,7 +119,10 @@ const Dashboard = () => {
             <h3 className="text-lg font-bold mb-4">Active Services</h3>
             <ul className="space-y-3">
               {summary.servicesRunning.map((service, index) => (
-                <li key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <li
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
                   <span className="font-medium">{service}</span>
                   <span className="flex items-center text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     Running
@@ -125,9 +138,13 @@ const Dashboard = () => {
             <div className="space-y-4">
               {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-3">
-                  <div className={`mt-1 h-2 w-2 rounded-full ${activity.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div
+                    className={`mt-1 h-2 w-2 rounded-full ${activity.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
+                  />
                   <div>
-                    <p className="text-sm font-medium">{activity.action} - {activity.service}</p>
+                    <p className="text-sm font-medium">
+                      {activity.action} - {activity.service}
+                    </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {new Date(activity.timestamp).toLocaleString()}
                     </p>

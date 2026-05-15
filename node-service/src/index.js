@@ -10,6 +10,8 @@
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const axios = require('axios');
 
@@ -21,11 +23,28 @@ const logger = require('./utils/logger');
 
 const app = express();
 
+// ─── Security & Rate Limiting ────────────────────────────────────────────────
+app.use(helmet()); // Sets secure HTTP headers
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window`
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors());
+// Configure CORS to only allow specific origins in production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' ? process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost' : '*',
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
+app.use('/api/', apiLimiter); // Apply rate limiter to all API routes
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

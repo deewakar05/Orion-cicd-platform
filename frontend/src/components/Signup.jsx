@@ -39,9 +39,7 @@ const Signup = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm text-center">
-              {error}
-            </div>
+            <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm text-center">{error}</div>
           )}
           <div className="space-y-4 rounded-md shadow-sm">
             <div className="relative">
