@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Activity, Box, Clock, CheckCircle, XCircle } from 'lucide-react';
-import api from '../api';
+import api from '../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
