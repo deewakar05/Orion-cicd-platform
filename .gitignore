@@ -12,11 +12,16 @@ Thumbs.db
 .env.local
 .env.production
 
-# ─── Node.js ──────────────────────────────────────────────────────────────────
+# ─── Node.js & React ────────────────────────────────────────────────────────────
 node-service/node_modules/
 node-service/coverage/
 node-service/npm-debug.log*
 node-service/.npm
+frontend/node_modules/
+frontend/dist/
+frontend/npm-debug.log*
+frontend/.npm
+node_modules/
 
 # ─── Java / Maven ─────────────────────────────────────────────────────────────
 java-service/target/

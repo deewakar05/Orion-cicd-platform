@@ -2,12 +2,13 @@
   <h1>🚀 Multi-Service CI/CD Automation Platform</h1>
   <p><strong>A DevOps portfolio project demonstrating automated pipelines, Docker orchestration, and secure multi-service architecture</strong></p>
 
-  [![CI/CD Pipeline](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml/badge.svg?branch=main&event=push)](https://github.com/deewakar05/multi-service-cicd-platform/actions/workflows/ci-cd.yml)
+  [![CI/CD Pipeline](https://github.com/deewakar05/Orion-cicd-platform/actions/workflows/ci-cd.yml/badge.svg?branch=main&event=push)](https://github.com/deewakar05/Orion-cicd-platform/actions/workflows/ci-cd.yml)
+  [![React](https://img.shields.io/badge/React-18.x-61DAFB.svg?logo=react&logoColor=black)](https://reactjs.org/)
   [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg?logo=node.js)](https://nodejs.org/)
   [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2-brightgreen.svg?logo=spring-boot)](https://spring.io/projects/spring-boot)
   [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg?logo=postgresql)](https://www.postgresql.org/)
   [![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg?logo=docker)](https://www.docker.com/)
-  [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF.svg?logo=github-actions)](https://github.com/features/actions)
+  [![Nginx](https://img.shields.io/badge/Nginx-Proxy-009639.svg?logo=nginx)](https://nginx.org/)
   [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 </div>
 
@@ -15,9 +16,25 @@
 
 ## 📖 Overview
 
-This project is a portfolio-grade DevOps platform built to demonstrate real-world CI/CD automation, Docker orchestration, and secure microservice design. It consists of two backend services (Node.js and Spring Boot) connected to a shared PostgreSQL database, fully containerized with Docker, and automated end-to-end via a 5-stage GitHub Actions pipeline.
+This project is a portfolio-grade DevOps platform built to demonstrate real-world CI/CD automation, Docker orchestration, and secure microservice design. It consists of a React frontend, two backend services (Node.js and Spring Boot) connected to a shared PostgreSQL database, fully containerized with Docker, and routed through an Nginx proxy.
 
-> Built as part of a university DevOps coursework project, later enhanced with production-grade security, health checks, and pipeline reliability improvements.
+> Built as part of a university DevOps coursework project, later enhanced with a full React frontend, production-grade security, health checks, and pipeline reliability improvements.
+
+---
+
+## 🎯 Why This Project?
+
+This project was built to simulate a production-grade full-stack microservices and DevOps workflow used in modern software teams. It demonstrates my ability to not just write code, but architect, containerize, test, and deploy a complete ecosystem that communicates securely. It bridges the gap between backend development, frontend integration, and cloud-native DevOps practices.
+
+---
+
+## 📸 Screenshots
+
+*(Replace these placeholders with actual screenshots of your running application)*
+
+- **Frontend Dashboard**: `![Dashboard Demo](link-to-dashboard.png)`
+- **Docker Compose Status (`docker compose ps`)**: `![Docker Status](link-to-docker.png)`
+- **GitHub Actions Pipeline Success**: `![Pipeline Success](link-to-pipeline.png)`
 
 ---
 
@@ -36,27 +53,39 @@ This project is a portfolio-grade DevOps platform built to demonstrate real-worl
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────┐
-│            GitHub Actions CI/CD          │
-│  push → test → build → integrate → deploy│
-└───────────────────┬─────────────────────┘
-                    │
-        ┌───────────▼───────────┐
-        │  Node.js API Gateway  │  :3000
-        │  JWT Auth + bcrypt    │
-        └──────┬──────────┬─────┘
-               │          │
-    ┌──────────▼──┐   ┌───▼──────────────┐
-    │  Auth Routes │   │ Java Analytics   │  :8080
-    │  /api/auth   │   │ Spring Boot 3.2  │
-    └──────────────┘   │ /reports /metrics│
-                       └────────┬─────────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │  PostgreSQL 15         │  :5432
-                    │  Persistent Volume     │
-                    └───────────────────────┘
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    Client([Client Browser]) -->|HTTP 80| Nginx[Nginx Reverse Proxy]
+    
+    subgraph Frontend Layer
+        Nginx -->|Route /| React[React Dashboard]
+    end
+    
+    subgraph API Layer
+        Nginx -->|Route /api/*| NodeGW[Node.js API Gateway]
+    end
+    
+    subgraph Service Layer
+        NodeGW -->|JWT Validated| JavaAuth[Spring Boot Analytics Service]
+    end
+    
+    subgraph Data Layer
+        JavaAuth -->|JDBC| DB[(PostgreSQL 15)]
+    end
+
+    classDef proxy fill:#009639,stroke:#333,stroke-width:2px,color:#fff;
+    classDef react fill:#61DAFB,stroke:#333,stroke-width:2px,color:#000;
+    classDef node fill:#339933,stroke:#333,stroke-width:2px,color:#fff;
+    classDef java fill:#6DB33F,stroke:#333,stroke-width:2px,color:#fff;
+    classDef pg fill:#336791,stroke:#333,stroke-width:2px,color:#fff;
+
+    class Nginx proxy;
+    class React react;
+    class NodeGW node;
+    class JavaAuth java;
+    class DB pg;
 ```
 
 ### Startup Ordering (Docker Compose)
@@ -71,6 +100,8 @@ Each service waits for its dependency to pass a health check before starting.
 
 | Layer | Technology |
 | :--- | :--- |
+| **Frontend Dashboard** | React 18, Vite, Tailwind CSS, Axios |
+| **Reverse Proxy** | Nginx |
 | **API Gateway** | Node.js 18, Express.js |
 | **Backend Service** | Java 17, Spring Boot 3.2, Spring Data JPA |
 | **Database** | PostgreSQL 15 |
@@ -78,9 +109,17 @@ Each service waits for its dependency to pass a health check before starting.
 | **Containerization** | Docker, Docker Compose |
 | **CI/CD** | GitHub Actions |
 | **Container Registry** | GitHub Container Registry (GHCR) |
-| **Testing (Node)** | Jest, Supertest |
-| **Testing (Java)** | JUnit 5, MockMvc, JaCoCo |
-| **Build Tool** | Maven 3.9 |
+| **Testing** | Jest, Supertest, JUnit 5, JaCoCo |
+
+---
+
+## 🧠 Design Decisions
+
+- **React + Tailwind Frontend**: Chosen to provide a modern, responsive user experience directly interacting with the backend APIs, transitioning the project to a full-stack system.
+- **Nginx Reverse Proxy**: Used to cleanly route frontend and backend traffic on the same port, avoiding CORS issues and mirroring a standard production network layout.
+- **Node.js API Gateway**: Acts as a lightweight proxy and authentication layer, handling JWTs efficiently before requests reach the heavy-lifting services.
+- **Spring Boot for Analytics**: Selected due to the strong JVM ecosystem for data processing and enterprise readiness.
+- **Docker Compose Orchestration**: Chosen for local orchestration simplicity and perfect parity between local development and CI/CD environments.
 
 ---
 
