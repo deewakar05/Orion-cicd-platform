@@ -2,7 +2,7 @@
 # Stage 1 — Dependencies
 # Install only production dependencies for a lean final image.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm ci
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — Build / Test (runs during CI)
 # ─────────────────────────────────────────────────────────────────────────────
-FROM node:18-alpine AS test
+FROM node:20-alpine AS test
 
 WORKDIR /app
 
@@ -29,7 +29,7 @@ RUN npm test
 # Stage 3 — Production Runtime
 # Only copy source and production node_modules.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Create a non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
